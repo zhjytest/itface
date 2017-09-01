@@ -1,0 +1,4 @@
+0
+clwt
+parm: {'code': 'clwt', 'key': '5DKKWJ54X23DJGS68KZRGLLBZN84BTCX', 'city_id': 1, 'email': 'xxx@123.com', 'device_id': '1679ff0411106a429e0a43ae04fda9010994bd39', 'jing': 116.5003987571553, 'method': 'zfb', 'systemversion': '10.2', 'channel': 'AppStore', 'uid': '261873', 'content': 'test_content', 'id': '740', 'city': '北京市', 'device_name': 'iPhone6 Plus', 'clientversion': 'ios_2902', 'wei': 39.98224485598885}
+{'status': 0, 'data': [], 'msg': '反馈成功'}

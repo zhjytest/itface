@@ -1,0 +1,65 @@
+<ns0:test-suite xmlns:ns0="urn:model.allure.qatools.yandex.ru" start="1497957907015" stop="1497957907636">
+  <name>testCase.test_paymentlist</name>
+  <labels/>
+  <test-cases>
+    <test-case start="1497957907015" status="passed" stop="1497957907386">
+      <name>Test_selfservicepayment.test_flow_payment</name>
+      <attachments>
+        <attachment source="184adfae-d5a3-4184-b1c2-2efe4e2f4f54-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+    <test-case start="1497957907394" status="passed" stop="1497957907610">
+      <name>Test_paymentlist.test_list</name>
+      <attachments>
+        <attachment source="c40380b8-3491-43ec-91ac-34ac77d98090-attachment.txt" title="Captured stdout call" type="text/plain"/>
+        <attachment source="1b158529-a174-46ce-b786-5d8ca8ec6a0a-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+    <test-case start="1497957907618" status="failed" stop="1497957907636">
+      <name>Test_paymentlist.test_last_one</name>
+      <failure>
+        <message>AssertionError: assert 90.0 == 8.0
+ +  where 90.0 = float(90)
+ +  and   8.0 = float('8')
+ +    where '8' = get_type()</message>
+        <stack-trace>self = &lt;testCase.test_paymentlist.Test_paymentlist object at 0x00000000049464A8&gt;
+
+    def test_last_one(self):
+        last_data = self.lst[0]
+        lastmoney = get_money()
+        print("lastmoney:",lastmoney)
+        #money = cvtstr(lastmoney)
+        #print("最后一条的钱:",money)
+        print("返回的钱:",last_data['money'])
+&gt;       assert float(last_data['types']) == float(get_type())
+E       AssertionError: assert 90.0 == 8.0
+E        +  where 90.0 = float(90)
+E        +  and   8.0 = float('8')
+E        +    where '8' = get_type()
+
+testCase\test_paymentlist.py:70: AssertionError</stack-trace>
+      </failure>
+      <attachments>
+        <attachment source="b2baadb4-f5e5-4bca-adb1-ce5b61e8cae6-attachment.txt" title="Captured stdout call" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+  </test-cases>
+</ns0:test-suite>

@@ -1,0 +1,16 @@
+<ns0:test-suite xmlns:ns0="urn:model.allure.qatools.yandex.ru" start="1497957908217" stop="1497957908325">
+  <name>testCase.test_unreadquantity</name>
+  <labels/>
+  <test-cases>
+    <test-case start="1497957908217" status="passed" stop="1497957908325">
+      <name>Test_unread.test_feedback</name>
+      <attachments/>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+  </test-cases>
+</ns0:test-suite>

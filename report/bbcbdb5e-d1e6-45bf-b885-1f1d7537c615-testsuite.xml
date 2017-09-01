@@ -1,0 +1,18 @@
+<ns0:test-suite xmlns:ns0="urn:model.allure.qatools.yandex.ru" start="1497957906123" stop="1497957906444">
+  <name>testCase.test_flow_updatepayment</name>
+  <labels/>
+  <test-cases>
+    <test-case start="1497957906123" status="passed" stop="1497957906444">
+      <name>Test_selfservicepayment.test_flow_payment</name>
+      <attachments>
+        <attachment source="18aee3cb-0010-42f9-9ffa-c289149734fd-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+  </test-cases>
+</ns0:test-suite>

@@ -1,0 +1,1 @@
+{'status': 0, 'data': {'status': 1, 'id': '742', 'types': 90, 'time': '2017-06-20 19:25:08', 'zfb_desc': '支付宝用户使用', 'status_desc': '待缴费', 'wx_desc': '微信钱包用户使用', 'name': '预交保险及停运费', 'dd_id': '69567', 'money': '4034.00', 'wz_num_no': '0'}, 'msg': 'success'}

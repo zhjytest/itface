@@ -1,0 +1,19 @@
+<ns0:test-suite xmlns:ns0="urn:model.allure.qatools.yandex.ru" start="1497957905156" stop="1497957905567">
+  <name>testCase.test_drivingtrajectory</name>
+  <labels/>
+  <test-cases>
+    <test-case start="1497957905156" status="passed" stop="1497957905567">
+      <name>Test_drivingtrajectory.test_driving</name>
+      <attachments>
+        <attachment source="a27408c5-01ce-4808-b1bd-d81d640c99ae-attachment.txt" title="Captured stdout call" type="text/plain"/>
+        <attachment source="392861da-6ea4-4322-b201-04cc0fc988a3-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+  </test-cases>
+</ns0:test-suite>

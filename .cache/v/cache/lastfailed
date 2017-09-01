@@ -1,0 +1,8 @@
+{
+  "testSutie/testMove/test_v2910_customerinfo.py::Test_customerinfo::()::test_e_coupon": true,
+  "testSutie/testMove/test_v2910_headimage.py::Test_headimage::()::test_upload": true,
+  "testSutie/testMove/test_v2910_licenseupload.py::Test_licenseupload::()::test_upload": true,
+  "testSutie/testMove/test_v2910_tourindex.py::Test_tourindex::()::test_data": true,
+  "testSutie/testMove/test_v3000_choosecar.py::Test_choosecar::()::test_choose": true,
+  "testSutie/testMove/test_v3000_choosecar.py::Test_choosecar::()::test_scan": true
+}

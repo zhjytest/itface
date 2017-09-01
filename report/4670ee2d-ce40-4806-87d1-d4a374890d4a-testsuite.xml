@@ -1,0 +1,54 @@
+<ns0:test-suite xmlns:ns0="urn:model.allure.qatools.yandex.ru" start="1497957906556" stop="1497957907011">
+  <name>testCase.test_paymentdetail</name>
+  <labels/>
+  <test-cases>
+    <test-case start="1497957906556" status="passed" stop="1497957906906">
+      <name>Test_selfservicepayment.test_flow_payment</name>
+      <attachments>
+        <attachment source="f6202570-4b3e-49fa-b7a3-30a117174954-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+    <test-case start="1497957906907" status="failed" stop="1497957907011">
+      <name>Test_payinsurancedetail.test_one_detail</name>
+      <failure>
+        <message>AssertionError: assert '预交保险及停运费' == '恶意用车费'
+  - 预交保险及停运费
+  + 恶意用车费</message>
+        <stack-trace>self = &lt;testCase.test_paymentdetail.Test_payinsurancedetail object at 0x000000000491BC18&gt;
+
+    def test_one_detail(self):
+        dict = {'1':"车辆维修费",'2':'清洁费','3':'停运费','4':'恶意用车费','5':'停车费','6':'其他费用','8':'行驶本押金'}
+        data = self.result['data']
+        status = data['status']
+        name = dict[get_type()]
+        print("name:",name)
+        money = str(get_money())+".00"
+        if status == 1:
+            #"验证待缴费的情况"
+            assert data['money'] == money
+&gt;           assert data['name'] == name
+E           AssertionError: assert '预交保险及停运费' == '恶意用车费'
+E             - 预交保险及停运费
+E             + 恶意用车费
+
+testCase\test_paymentdetail.py:44: AssertionError</stack-trace>
+      </failure>
+      <attachments>
+        <attachment source="5fe1bfb2-8a7a-4e21-a17a-4c97d2bb846b-attachment.txt" title="Captured stdout call" type="text/plain"/>
+        <attachment source="99ad0c07-872e-416c-9d8b-c579aebc0da9-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+  </test-cases>
+</ns0:test-suite>

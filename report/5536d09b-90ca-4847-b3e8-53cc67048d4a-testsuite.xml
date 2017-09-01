@@ -1,0 +1,31 @@
+<ns0:test-suite xmlns:ns0="urn:model.allure.qatools.yandex.ru" start="1497957906446" stop="1497957906554">
+  <name>testCase.test_payinsurancedetail</name>
+  <labels/>
+  <test-cases>
+    <test-case start="1497957906446" status="failed" stop="1497957906554">
+      <name>Test_payinsurancedetail.test_detail</name>
+      <failure>
+        <message>KeyError: 'pay_channel'</message>
+        <stack-trace>self = &lt;testCase.test_payinsurancedetail.Test_payinsurancedetail object at 0x00000000039C9FD0&gt;
+
+    def test_detail(self):
+        pay_channel = ['现金','微信支付','支付宝支付']
+        status_desc = ['已缴费','已退款','退款中','待缴费']
+        data = self.result['data']
+&gt;       print("data['pay_channel']",type(data['pay_channel']))
+E       KeyError: 'pay_channel'
+
+testCase\test_payinsurancedetail.py:38: KeyError</stack-trace>
+      </failure>
+      <attachments>
+        <attachment source="db14b2a5-283a-4bba-8220-c3785d8c196a-attachment.txt" title="Captured stdout setup" type="text/plain"/>
+      </attachments>
+      <labels>
+        <label name="severity" value="normal"/>
+        <label name="thread" value="10632-MainThread"/>
+        <label name="host" value="LAPTOP-AT076A74"/>
+      </labels>
+      <steps/>
+    </test-case>
+  </test-cases>
+</ns0:test-suite>
