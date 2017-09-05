@@ -3,9 +3,9 @@
 
 import os
 import pytest
-from test_login import Login
+from test_login import Test_login
 
-lg = Login('15810553242')
+lg = Test_login('15810553242')
 lg.get_info_new()
 
 suite = "part"    #匹配执行的策略

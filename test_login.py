@@ -5,7 +5,7 @@ import json
 from config import set_key,set_uid,set_mobile,get_urls,get_parm
 from frameUtil.get_info import get_loadresult
 
-class Login():
+class Test_login():
     addr = "http://123.57.217.108/api/register.php"
     phone = ''
     def __init__(self,phone):
@@ -78,9 +78,12 @@ class Login():
         print(lst)
         return lst
 
+    def test_login(self):
+        Test_login('15810553242').get_info_new()
+
 
 if __name__ == '__main__':
-    lg = Login('15810553242')
+    lg = Test_login('15810553242')
     #print(lg.get_headers())
     print(lg.get_key())
     #print(lg.get_cookies())

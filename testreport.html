@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function find_all(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sort_column(elem) {
+    toggle_sort_states(elem);
+    var colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    var key;
+    if (elem.classList.contains('numeric')) {
+        key = key_num;
+    } else if (elem.classList.contains('result')) {
+        key = key_result;
+    } else {
+        key = key_alpha;
+    }
+    sort_table(elem, key(colIndex));
+}
+
+function show_all_extras() {
+    find_all('.col-result').forEach(show_extras);
+}
+
+function hide_all_extras() {
+    find_all('.col-result').forEach(hide_extras);
+}
+
+function show_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.remove("collapsed");
+    expandcollapse.classList.remove("expander");
+    expandcollapse.classList.add("collapser");
+}
+
+function hide_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.add("collapsed");
+    expandcollapse.classList.remove("collapser");
+    expandcollapse.classList.add("expander");
+}
+
+function show_filters() {
+    var filter_items = document.getElementsByClassName('filter');
+    for (var i = 0; i < filter_items.length; i++)
+        filter_items[i].hidden = false;
+}
+
+function add_collapse() {
+    // Add links for show/hide all
+    var resulttable = find('table#results-table');
+    var showhideall = document.createElement("p");
+    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
+                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    find_all('.col-result').forEach(function(elem) {
+        var extras = elem.parentNode.nextElementSibling;
+        var expandcollapse = document.createElement("span");
+        if (elem.innerHTML === 'Passed') {
+            extras.classList.add("collapsed");
+            expandcollapse.classList.add("expander");
+        } else {
+            expandcollapse.classList.add("collapser");
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener("click", function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains("collapsed")) {
+                show_extras(event.currentTarget);
+            } else {
+                hide_extras(event.currentTarget);
+            }
+        });
+    })
+}
+
+function init () {
+    reset_sort_headers();
+
+    add_collapse();
+
+    show_filters();
+
+    toggle_sort_states(find('.initial-sort'));
+
+    find_all('.sortable').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  sort_column(elem);
+                              }, false)
+    });
+
+};
+
+function sort_table(clicked, key_func) {
+    var rows = find_all('.results-table-row');
+    var reversed = !clicked.classList.contains('asc');
+    var sorted_rows = sort(rows, key_func, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    var thead = document.getElementById("results-table-head");
+    document.getElementById('results-table').remove();
+    var parent = document.createElement("table");
+    parent.id = "results-table";
+    parent.appendChild(thead);
+    sorted_rows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName("BODY")[0].appendChild(parent);
+}
+
+function sort(items, key_func, reversed) {
+    var sort_array = items.map(function(item, i) {
+        return [key_func(item), i];
+    });
+    var multiplier = reversed ? -1 : 1;
+
+    sort_array.sort(function(a, b) {
+        var key_a = a[0];
+        var key_b = b[0];
+        return multiplier * (key_a >= key_b ? 1 : -1);
+    });
+
+    return sort_array.map(function(item) {
+        var index = item[1];
+        return items[index];
+    });
+}
+
+function key_alpha(col_index) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[col_index].firstChild.data.toLowerCase();
+    };
+}
+
+function key_num(col_index) {
+    return function(elem) {
+        return parseFloat(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function key_result(col_index) {
+    return function(elem) {
+        var strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+                       'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function reset_sort_headers() {
+    find_all('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    find_all('.sortable').forEach(function(elem) {
+        var icon = document.createElement("div");
+        icon.className = "sort-icon";
+        icon.textContent = "vvv";
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove("desc", "active");
+        elem.classList.add("asc", "inactive");
+    });
+}
+
+function toggle_sort_states(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        reset_sort_headers();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function is_all_rows_hidden(value) {
+  return value.hidden == false;
+}
+
+function filter_table(elem) {
+    var outcome_att = "data-test-result";
+    var outcome = elem.getAttribute(outcome_att);
+    class_outcome = outcome + " results-table-row";
+    var outcome_rows = document.getElementsByClassName(class_outcome);
+
+    for(var i = 0; i < outcome_rows.length; i++){
+        outcome_rows[i].hidden = !elem.checked;
+    }
+
+    var rows = find_all('.results-table-row').filter(is_all_rows_hidden);
+    var all_rows_hidden = rows.length == 0 ? true : false;
+    var not_found_message = document.getElementById("not-found-message");
+    not_found_message.hidden = !all_rows_hidden;
+}
+</script>
+    <p>Report generated on 05-Sep-2017 at 19:01:07 by<a href="https://pypi.python.org/pypi/pytest-html"> pytest-html</a> v1.15.2</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>JAVA_HOME</td>
+        <td>C:\Program Files (x86)\Java\jdk1.8.0_121</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{&apos;pytest&apos;: &apos;3.2.1&apos;, &apos;py&apos;: &apos;1.4.34&apos;, &apos;pluggy&apos;: &apos;0.4.0&apos;}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-8-6.2.9200</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{&apos;html&apos;: &apos;1.15.2&apos;, &apos;metadata&apos;: &apos;1.5.0&apos;}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.4.3rc1</td></tr></table>
+    <h2>Summary</h2>
+    <p>21 tests ran in 6.51 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">4 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">17 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable numeric" col="duration">Duration</th>
+          <th>Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_accidentupload.py::Test_accidentupload::()::test_a_upload</td>
+          <td class="col-duration">0.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_accidentupload.Test_accidentupload object at 0x0000000004E927F0&gt;<br/><br/>    def test_a_upload(self):<br/>        self.parm[&#x27;action&#x27;] = &#x27;upload&#x27;<br/>        self.parm[&#x27;type&#x27;] = 2<br/>        self.parm[&#x27;content&#x27;] = &#x27;test&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_accidentupload.py:29: AssertionError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_accidentupload.py::Test_accidentupload::()::test_b_info</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_accidentupload.Test_accidentupload object at 0x0000000004F5CEF0&gt;<br/><br/>    def test_b_info(self):<br/>        self.parm[&#x27;action&#x27;] = &#x27;c_info&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_accidentupload.py:37: AssertionError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_accidentupload.py::Test_accidentupload::()::test_c_list</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_accidentupload.Test_accidentupload object at 0x0000000004F96A90&gt;<br/><br/>    def test_c_list(self):<br/>        self.parm[&#x27;action&#x27;] = &#x27;list&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;data&#x27;][0][&#x27;order_id&#x27;] == str(self.orderid)<br/><span class="error">E       IndexError: list index out of range</span><br/><br/>testSutie\testMove\test_v2910_accidentupload.py:43: IndexError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_breakdownupload.py::Test_breakdownupload::()::test_a_upload</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_breakdownupload.Test_breakdownupload object at 0x000000000367D198&gt;<br/><br/>    def test_a_upload(self):<br/>        x = randint(1,8)<br/>        self.parm[&#x27;break_units&#x27;] = x<br/>        self.parm[&#x27;action&#x27;] = &#x27;upload&#x27;<br/>        self.parm[&#x27;content&#x27;] = self.content<br/>        fpwd = get_pwd(&#x27;test.jpg&#x27;)<br/>        print(fpwd)<br/>        files = {&#x27;file&#x27;:open(fpwd,&#x27;rb&#x27;)}<br/>        #files = {&#x27;file&#x27;:open(&#x27;d:/project/pyinterface/yditface/tools/test.jpg&#x27;,&#x27;rb&#x27;)}<br/>        result = &#x27;&#x27;<br/>        if x == 8:<br/>            result = get_fileresult(self.url,self.parm,files)<br/>        else:<br/>            result = get_loadresult(self.url,self.parm)<br/>        print(&quot;故障反馈提交后:&quot;,result)<br/>&gt;       assert result[&#x27;status&#x27;]  == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_breakdownupload.py:47: AssertionError<br/>---------------------------- Captured stdout setup -----------------------------<br/>ddid:::::: 51317
+----------------------------- Captured stdout call -----------------------------<br/>D:\project\pyinterface\yditface\tools\test.jpg
+D:\project\pyinterface\yditface\tools\test.jpg
+故障反馈提交后: {&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_breakdownupload.py::Test_breakdownupload::()::test_b_list</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_breakdownupload.Test_breakdownupload object at 0x0000000004FE86A0&gt;<br/><br/>    def test_b_list(self):<br/>        self.parm[&#x27;action&#x27;] = &#x27;list&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;status&#x27;]  == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_breakdownupload.py:53: AssertionError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_codehistory.py::Test_codehistory::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_codehistory.Test_codehistory object at 0x0000000004FF5780&gt;<br/><br/>    def test_data(self):<br/>&gt;       assert self.result[&#x27;data&#x27;][0][&#x27;desc&#x27;] == &#x27;使用分享码获得优惠券&#x27;<br/><span class="error">E       IndexError: list index out of range</span><br/><br/>testSutie\testMove\test_v2910_codehistory.py:24: IndexError<br/>---------------------------- Captured stdout setup -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_codeuse.py::Test_codeuse::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_codeuse.Test_codeuse object at 0x00000000050A09B0&gt;<br/><br/>    def test_data(self):<br/>        status = self.result[&#x27;status&#x27;]<br/>        if status == 0:<br/>            assert self.result[&#x27;msg&#x27;] == &#x27;使用推荐码成功!&#x27;<br/>        else:<br/>&gt;           assert self.result[&#x27;msg&#x27;] == &#x27;您使用过其他人的推荐码!&#x27;<br/><span class="error">E           AssertionError: assert &#x27;您的账号在其它设备登录，请重新登录&#x27; == &#x27;您使用过其他人的推荐码!&#x27;</span><br/><span class="error">E             - 您的账号在其它设备登录，请重新登录</span><br/><span class="error">E             + 您使用过其他人的推荐码!</span><br/><br/>testSutie\testMove\test_v2910_codeuse.py:33: AssertionError<br/>---------------------------- Captured stdout setup -----------------------------<br/>code: 4M6G9E
+{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_customerinfo.py::Test_customerinfo::()::test_a_customer</td>
+          <td class="col-duration">0.07</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_customerinfo.Test_customerinfo object at 0x00000000050A1048&gt;<br/><br/>    def test_a_customer(self):<br/>        self.parm[&#x27;type&#x27;] = &#x27;user&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>        assert result[&#x27;status&#x27;] == 0<br/>        assert result[&#x27;data&#x27;][&#x27;gender&#x27;] == 3<br/>&gt;       assert result[&#x27;data&#x27;][&#x27;mobile&#x27;] == get_mobile()<br/><span class="error">E       AssertionError: assert 0 == &#x27;&#x27;</span><br/><span class="error">E        +  where &#x27;&#x27; = get_mobile()</span><br/><br/>testSutie\testMove\test_v2910_customerinfo.py:27: AssertionError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 0, &#x27;data&#x27;: {&#x27;yuee_point&#x27;: 0, &#x27;gender&#x27;: 3, &#x27;card_type&#x27;: 0, &#x27;car_begin&#x27;: &#x27;0&#x27;, &#x27;ocr_id_card&#x27;: 1, &#x27;cs_id_card_auth&#x27;: 1, &#x27;email&#x27;: &#x27;&#x27;, &#x27;creditcard&#x27;: [{&#x27;id&#x27;: &#x27;11&#x27;, &#x27;number&#x27;: &#x27;6225551372415875&#x27;, &#x27;expire_valid&#x27;: 0, &#x27;expire&#x27;: &#x27;0718&#x27;, &#x27;status&#x27;: &#x27;正常&#x27;, &#x27;valid&#x27;: 1, &#x27;bank_name&#x27;: &#x27;广发银行&#x27;}], &#x27;code&#x27;: &#x27;&#x27;, &#x27;yidi_car_fee&#x27;: 0, &#x27;idcard_url&#x27;: &#x27;&#x27;, &#x27;dd_pay&#x27;: [], &#x27;yuee_desc&#x27;: &#x27;&#x27;, &#x27;idcard_user_url&#x27;: &#x27;&#x27;, &#x27;bind_creditcard&#x27;: 0, &#x27;name&#x27;: &#x27;&#x27;, &#x27;licenseurl&#x27;: &#x27; &#x27;, &#x27;city_arr&#x27;: [{&#x27;id&#x27;: &#x27;1&#x27;, &#x27;cname&#x27;: &#x27;北京市&#x27;, &#x27;city_img&#x27;: &#x27;http://123.57.217.108/api/images/city/bj.png&#x27;, &#x27;lat&#x27;: &#x27;39.914935&#x27;, &#x27;lng&#x27;: &#x27;116.405419&#x27;, &#x27;cnum&#x27;: &#x27;161&#x27;}, {&#x27;id&#x27;: &#x27;2&#x27;, &#x27;cname&#x27;: &#x27;天津市&#x27;, &#x27;city_img&#x27;: &#x27;http://123.57.217.108/api/images/city/tj.png&#x27;, &#x27;lat&#x27;: &#x27;39.09813&#x27;, &#x27;lng&#x27;: &#x27;117.218924&#x27;, &#x27;cnum&#x27;: &#x27;5&#x27;}, {&#x27;id&#x27;: &#x27;14&#x27;, &#x27;cname&#x27;: &#x27;太原市&#x27;, &#x27;city_img&#x27;: &#x27;http://123.57.217.108/api/images/city/ty.png&#x27;, &#x27;lat&#x27;: &#x27;37.862756&#x27;, &#x27;lng&#x27;: &#x27;112.554185&#x27;, &#x27;cnum&#x27;: &#x27;12&#x27;}, {&#x27;id&#x27;: &#x27;73&#x27;, &#x27;cname&#x27;: &#x27;上海市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20161121/QkxdiubF.png&#x27;, &#x27;lat&#x27;: &#x27;31.236058&#x27;, &#x27;lng&#x27;: &#x27;121.480812&#x27;, &#x27;cnum&#x27;: &#x27;0&#x27;}, {&#x27;id&#x27;: &#x27;116&#x27;, &#x27;cname&#x27;: &#x27;厦门市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20160831/8Wz5pVz4.png&#x27;, &#x27;lat&#x27;: &#x27;24.497659&#x27;, &#x27;lng&#x27;: &#x27;118.090741&#x27;, &#x27;cnum&#x27;: &#x27;21&#x27;}, {&#x27;id&#x27;: &#x27;117&#x27;, &#x27;cname&#x27;: &#x27;莆田市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20161019/l0Bph0Kv.png&#x27;, &#x27;lat&#x27;: &#x27;25.456698&#x27;, &#x27;lng&#x27;: &#x27;119.00877&#x27;, &#x27;cnum&#x27;: &#x27;8&#x27;}, {&#x27;id&#x27;: &#x27;119&#x27;, &#x27;cname&#x27;: &#x27;泉州市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20161027/zYgo9h7h.png&#x27;, &#x27;lat&#x27;: &#x27;24.885225&#x27;, &#x27;lng&#x27;: &#x27;118.679441&#x27;, &#x27;cnum&#x27;: &#x27;8&#x27;}, {&#x27;id&#x27;: &#x27;120&#x27;, &#x27;cname&#x27;: &#x27;漳州市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20161028/HIHTPZdN.png&#x27;, &#x27;lat&#x27;: &#x27;24.537869&#x27;, &#x27;lng&#x27;: &#x27;117.548043&#x27;, &#x27;cnum&#x27;: &#x27;4&#x27;}, {&#x27;id&#x27;: &#x27;124&#x27;, &#x27;cname&#x27;: &#x27;南昌市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20160922/mwHMXQ5O.png&#x27;, &#x27;lat&#x27;: &#x27;28.69097&#x27;, &#x27;lng&#x27;: &#x27;115.861079&#x27;, &#x27;cnum&#x27;: &#x27;0&#x27;}, {&#x27;id&#x27;: &#x27;197&#x27;, &#x27;cname&#x27;: &#x27;广州市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20160922/kIukz3Y1.png&#x27;, &#x27;lat&#x27;: &#x27;23.14993&#x27;, &#x27;lng&#x27;: &#x27;113.263894&#x27;, &#x27;cnum&#x27;: &#x27;9&#x27;}, {&#x27;id&#x27;: &#x27;201&#x27;, &#x27;cname&#x27;: &#x27;汕头市&#x27;, &#x27;city_img&#x27;: &#x27;http://mana.yiduyongche.com:8888./upload/acity/20161216/5uHDq36V.png&#x27;, &#x27;lat&#x27;: &#x27;23.361943&#x27;, &#x27;lng&#x27;: &#x27;116.692189&#x27;, &#x27;cnum&#x27;: &#x27;0&#x27;}], &#x27;head_image_url&#x27;: &#x27;&#x27;, &#x27;syh_wd_num&#x27;: &#x27;438&#x27;, &#x27;license&#x27;: {&#x27;id&#x27;: &#x27;&#x27;, &#x27;auth&#x27;: 3}, &#x27;email_status&#x27;: 0, &#x27;card_type_desc&#x27;: &#x27;&#x27;, &#x27;weizhang_flag&#x27;: 0, &#x27;car_alert_time&#x27;: 60, &#x27;mobile&#x27;: 0, &#x27;inv_limit&#x27;: &#x27;0.00&#x27;, &#x27;prompt_flag&#x27;: 0, &#x27;license_refuse_reason&#x27;: &#x27;请升级到最新版本再进行身份认证&#x27;, &#x27;balance&#x27;: 0, &#x27;weizhang&#x27;: [], &#x27;cs_id_card_auth_enable&#x27;: 0}, &#x27;msg&#x27;: &#x27;&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_customerinfo.py::Test_customerinfo::()::test_b_unreadmsg</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_customerinfo.Test_customerinfo object at 0x00000000050B63C8&gt;<br/><br/>    def test_b_unreadmsg(self):<br/>        self.parm[&#x27;type&#x27;] = &#x27;msg_unread&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert int(result[&#x27;data&#x27;][&#x27;msg_unread&#x27;]) &gt;= 0<br/><span class="error">E       TypeError: list indices must be integers, not str</span><br/><br/>testSutie\testMove\test_v2910_customerinfo.py:34: TypeError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_customerinfo.py::Test_customerinfo::()::test_c_unreadact</td>
+          <td class="col-duration">0.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_customerinfo.Test_customerinfo object at 0x00000000050BFE10&gt;<br/><br/>    def test_c_unreadact(self):<br/>        self.parm[&#x27;type&#x27;] = &#x27;act_unread&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;data&#x27;][&#x27;act_unread&#x27;] == &#x27;0&#x27;<br/><span class="error">E       TypeError: list indices must be integers, not str</span><br/><br/>testSutie\testMove\test_v2910_customerinfo.py:40: TypeError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_customerinfo.py::Test_customerinfo::()::test_d_msg</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_customerinfo.Test_customerinfo object at 0x00000000050B9C50&gt;<br/><br/>    def test_d_msg(self):<br/>        self.parm[&#x27;type&#x27;] = &#x27;msg&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>        nums = len(result[&#x27;data&#x27;]) - 1<br/>        print(&quot;nums:&quot;,nums)<br/>&gt;       index = randint(0,nums)<br/><br/>testSutie\testMove\test_v2910_customerinfo.py:49: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>c:\python34\lib\random.py:218: in randint<br/>    return self.randrange(a, b+1)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;random.Random object at 0x000000000377ECF8&gt;, start = 0, stop = 0<br/>step = 1, _int = &lt;class &#x27;int&#x27;&gt;<br/><br/>    def randrange(self, start, stop=None, step=1, _int=int):<br/>        &quot;&quot;&quot;Choose a random item from range(start, stop[, step]).<br/>    <br/>            This fixes the problem with randint() which includes the<br/>            endpoint; in Python this is usually not what you want.<br/>    <br/>            &quot;&quot;&quot;<br/>    <br/>        # This code is a bit messy to make it fast for the<br/>        # common case while still doing adequate error checking.<br/>        istart = _int(start)<br/>        if istart != start:<br/>            raise ValueError(&quot;non-integer arg 1 for randrange()&quot;)<br/>        if stop is None:<br/>            if istart &gt; 0:<br/>                return self._randbelow(istart)<br/>            raise ValueError(&quot;empty range for randrange()&quot;)<br/>    <br/>        # stop argument supplied.<br/>        istop = _int(stop)<br/>        if istop != stop:<br/>            raise ValueError(&quot;non-integer stop for randrange()&quot;)<br/>        width = istop - istart<br/>        if step == 1 and width &gt; 0:<br/>            return istart + self._randbelow(width)<br/>        if step == 1:<br/>&gt;           raise ValueError(&quot;empty range for randrange() (%d,%d, %d)&quot; % (istart, istop, width))<br/><span class="error">E           ValueError: empty range for randrange() (0,0, 0)</span><br/><br/>c:\python34\lib\random.py:196: ValueError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;请重新登录&#x27;}
+nums: -1
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_headimage.py::Test_headimage::()::test_upload</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_headimage.Test_headimage object at 0x0000000004F264A8&gt;<br/><br/>    def test_upload(self):<br/>&gt;       assert self.result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_headimage.py:26: AssertionError<br/>---------------------------- Captured stdout setup -----------------------------<br/>D:\project\pyinterface\yditface\tools\test.jpg
+D:\project\pyinterface\yditface\tools\test.jpg
+{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_licenseupload.py::Test_licenseupload::()::test_upload</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_licenseupload.Test_licenseupload object at 0x00000000050C1710&gt;<br/><br/>    def test_upload(self):<br/>&gt;       assert self.result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 1 == 0</span><br/><br/>testSutie\testMove\test_v2910_licenseupload.py:38: AssertionError<br/>---------------------------- Captured stdout setup -----------------------------<br/>[&#x27;MVNYNBDMSE5JPBCYUARLKMWF5TXBC9W3&#x27;, 666667]
+key: MVNYNBDMSE5JPBCYUARLKMWF5TXBC9W3
+uid: 666667
+D:\project\pyinterface\yditface\tools\identity1.png
+D:\project\pyinterface\yditface\tools\identity2.png
+D:\project\pyinterface\yditface\tools\identity3.png
+D:\project\pyinterface\yditface\tools\identity4.png
+{&#x27;status&#x27;: 1, &#x27;data&#x27;: {&#x27;errorCode&#x27;: 8, &#x27;message&#x27;: &#x27;Undefined variable: uid&#x27;}, &#x27;msg&#x27;: &#x27;请求失败&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_tourhistorylist.py::Test_tourhistorylist::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_tourhistorylist.Test_tourhistorylist object at 0x00000000050BF748&gt;<br/><br/>    def test_data(self):<br/>        types = [&#x27;已完成&#x27;,&#x27;已取消&#x27;,&#x27;已开始&#x27;]<br/>&gt;       assert self.result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_tourhistorylist.py:28: AssertionError<br/>---------------------------- Captured stdout setup -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_tourindex.py::Test_tourindex::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v2910_tourindex.Test_tourindex object at 0x00000000050F8940&gt;<br/><br/>    def test_data(self):<br/>&gt;       assert self.result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 2001 == 0</span><br/><br/>testSutie\testMove\test_v2910_tourindex.py:24: AssertionError<br/>---------------------------- Captured stdout setup -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;您的账号在其它设备登录，请重新登录&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v3000_choosecar.py::Test_choosecar::()::test_choose</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v3000_choosecar.Test_choosecar object at 0x00000000050F8E10&gt;<br/><br/>    def test_choose(self):<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 1 == 0</span><br/><br/>testSutie\testMove\test_v3000_choosecar.py:29: AssertionError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 1, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;未查询到此用户&#x27;}
+</div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">testSutie/testMove/test_v3000_choosecar.py::Test_choosecar::()::test_scan</td>
+          <td class="col-duration">0.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;testSutie.testMove.test_v3000_choosecar.Test_choosecar object at 0x00000000050EB4A8&gt;<br/><br/>    def test_scan(self):<br/>        self.parm[&#x27;car_id&#x27;] = &#x27;187&#x27;<br/>        result = get_loadresult(self.url,self.parm)<br/>        print(result)<br/>&gt;       assert result[&#x27;status&#x27;] == 0<br/><span class="error">E       assert 1 == 0</span><br/><br/>testSutie\testMove\test_v3000_choosecar.py:40: AssertionError<br/>----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 1, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;未查询到此用户&#x27;}
+</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_activitycur.py::Test_activitycur::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">---------------------------- Captured stdout setup -----------------------------<br/>{&#x27;status&#x27;: 0, &#x27;data&#x27;: [{&#x27;city_id&#x27;: &#x27;1,2,14,73,116,117,119,120,124,197,201&#x27;, &#x27;id&#x27;: &#x27;3148&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170728/sVOjr6s9.png&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;一度老友记&#x27;, &#x27;join_time&#x27;: &#x27;1501225264&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3148&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170728/NP4lZFje.png&#x27;}, {&#x27;city_id&#x27;: &#x27;0&#x27;, &#x27;id&#x27;: &#x27;3069&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/20170210/589d6b075eb1a.png&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;一度车神分&#x27;, &#x27;join_time&#x27;: &#x27;1486711567&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3069&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/20170210/589d6b04f2021.png&#x27;}, {&#x27;city_id&#x27;: &#x27;1&#x27;, &#x27;id&#x27;: &#x27;3092&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/20161216/58534633d189c.png&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;首都机场T3停车场开通啦~&#x27;, &#x27;join_time&#x27;: &#x27;1483160569&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3092&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/20161216/58534631d417d.png&#x27;}, {&#x27;city_id&#x27;: &#x27;1&#x27;, &#x27;id&#x27;: &#x27;3141&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170627/YktHQbDX.png&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;北京用车拍照功能正式上线&#x27;, &#x27;join_time&#x27;: &#x27;1498546915&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3141&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170627/5VVvAhwi.png&#x27;}], &#x27;msg&#x27;: &#x27;&#x27;}
+</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_activitylist.py::Test_activitylist::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">---------------------------- Captured stdout setup -----------------------------<br/>{&#x27;status&#x27;: 0, &#x27;data&#x27;: [{&#x27;online_s_time&#x27;: &#x27;0&#x27;, &#x27;id&#x27;: &#x27;3148&#x27;, &#x27;join_time&#x27;: &#x27;1501225264&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3148&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;act_e_time&#x27;: &#x27;1504162560&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170728/NP4lZFje.png&#x27;, &#x27;status&#x27;: &#x27;1&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170728/sVOjr6s9.png&#x27;, &#x27;online_e_time&#x27;: &#x27;0&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;一度老友记&#x27;, &#x27;act_s_time&#x27;: &#x27;1503557760&#x27;, &#x27;city_id&#x27;: &#x27;1,2,14,73,116,117,119,120,124,197,201&#x27;}, {&#x27;online_s_time&#x27;: &#x27;0&#x27;, &#x27;id&#x27;: &#x27;3069&#x27;, &#x27;join_time&#x27;: &#x27;1486711567&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3069&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;act_e_time&#x27;: &#x27;1483113600&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/20170210/589d6b04f2021.png&#x27;, &#x27;status&#x27;: &#x27;1&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/20170210/589d6b075eb1a.png&#x27;, &#x27;online_e_time&#x27;: &#x27;0&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;一度车神分&#x27;, &#x27;act_s_time&#x27;: &#x27;1474560000&#x27;, &#x27;city_id&#x27;: &#x27;0&#x27;}, {&#x27;online_s_time&#x27;: &#x27;0&#x27;, &#x27;id&#x27;: &#x27;3092&#x27;, &#x27;join_time&#x27;: &#x27;1483160569&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3092&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;act_e_time&#x27;: &#x27;1485792000&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/20161216/58534631d417d.png&#x27;, &#x27;status&#x27;: &#x27;1&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/20161216/58534633d189c.png&#x27;, &#x27;online_e_time&#x27;: &#x27;0&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;首都机场T3停车场开通啦~&#x27;, &#x27;act_s_time&#x27;: &#x27;1481817600&#x27;, &#x27;city_id&#x27;: &#x27;1&#x27;}, {&#x27;online_s_time&#x27;: &#x27;0&#x27;, &#x27;id&#x27;: &#x27;3141&#x27;, &#x27;join_time&#x27;: &#x27;1498546915&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3141&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;act_e_time&#x27;: &#x27;1514701620&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170627/5VVvAhwi.png&#x27;, &#x27;status&#x27;: &#x27;1&#x27;, &#x27;img_s_url&#x27;: &#x27;http://123.57.217.108:8889/./upload/activity/20170627/YktHQbDX.png&#x27;, &#x27;online_e_time&#x27;: &#x27;0&#x27;, &#x27;icon_close_url&#x27;: &#x27;http://123.57.217.108/images/activity/close.png&#x27;, &#x27;title&#x27;: &#x27;北京用车拍照功能正式上线&#x27;, &#x27;act_s_time&#x27;: &#x27;1498717620&#x27;, &#x27;city_id&#x27;: &#x27;1&#x27;}], &#x27;msg&#x27;: &#x27;&#x27;}
+</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_activitypersonalcenter.py::Test_activitypersonalcenter::()::test_data</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">---------------------------- Captured stdout setup -----------------------------<br/>{&#x27;status&#x27;: 0, &#x27;data&#x27;: {&#x27;title&#x27;: &#x27;一度车神分&#x27;, &#x27;id&#x27;: &#x27;3069&#x27;, &#x27;h5_url&#x27;: &#x27;http://123.57.217.108/h5/activity.php?id=3069&amp;uid=18513559169&amp;token=fb70cc7e046ce7a9b94c707f159d362e&amp;act=enter&amp;ver=2908&#x27;, &#x27;img_b_url&#x27;: &#x27;http://123.57.217.108:8889/20170210/589d6b075eb1a.png&#x27;}, &#x27;msg&#x27;: &#x27;&#x27;}
+</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">testSutie/testMove/test_v2910_customerinfo.py::Test_customerinfo::()::test_e_coupon</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>{&#x27;status&#x27;: 2001, &#x27;data&#x27;: [], &#x27;msg&#x27;: &#x27;请重新登录&#x27;}
+nums: 0
+</div></td></tr></tbody></table></body></html>
