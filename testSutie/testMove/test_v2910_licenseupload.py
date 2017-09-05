@@ -4,7 +4,7 @@ from config import *
 from frameUtil.get_info import get_fileresult,generate_randstr,get_loadresult
 from frameUtil.rwfile import get_pwd
 from random import  choice,randint
-from test_login import Login
+from test_login import Test_login
 from db.sqlconn import Mysql
 
 class Test_licenseupload():
@@ -12,7 +12,7 @@ class Test_licenseupload():
 
     def setup_class(self):
         url = get_urls("/license/upload.html",3)
-        lg = Login('13210007146')
+        lg = Test_login('13210007146')
         vls = lg.get_list()
         key = vls[0]
         print("key:",key)

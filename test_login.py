@@ -7,15 +7,16 @@ from frameUtil.get_info import get_loadresult
 
 class Test_login():
     addr = "http://123.57.217.108/api/register.php"
-    phone = ''
-    def __init__(self,phone):
-        self.phone = phone
+    phone = '15810553242'
+    def setup_class(self):
+        #self.phone = phone
         self.url = get_urls("/login/code.html",3)
         parm = get_parm()
         parm['phone'] = self.phone
         #parm = {'phone':self.phone,'action':'register','type':'login'}
         self.parm = parm
         self.r = get_loadresult(self.url,self.parm)
+        print(self.r)
 
 
     def get_randstr(self):
@@ -26,27 +27,10 @@ class Test_login():
             randstr = self.r['msg']
         return randstr
 
-    def get_info(self):
-        randstr = self.get_randstr()
-        parm = {'phone':self.phone,'action':'check_code','check_code':'2310','randstr':randstr}
-        self.rlt = requests.post(self.addr,parm)
-        result = self.rlt.text
-        load_result = json.loads(result)
-        #print(load_result)
-        status = load_result['status']
-        if status == 0:
-            key = load_result['data']['check_key']
-            id = load_result['data']['id']
-            mobile = load_result['data']['mobile']
-        else:
-            key = load_result['msg']
-        set_key(key)
-        set_uid(id)
-        set_mobile(mobile)
-        #return key
 
-    def get_info_new(self):
-        randstr = self.get_randstr()
+    def get_info(self):
+        randstr = self.r['data']['randstr']
+        #randstr = self.get_randstr()
         ver_url = get_urls("/login/verify.html",3)
         parm = get_parm()
         parm['code'] = 2310
@@ -79,7 +63,7 @@ class Test_login():
         return lst
 
     def test_login(self):
-        Test_login('15810553242').get_info_new()
+        self.get_info()
 
 
 if __name__ == '__main__':
